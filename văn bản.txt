@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>送給你的神秘禮物</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Noto Sans TC & Ma Shan Zheng 繁體中文書寫字體 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti 彩帶煙火特效 -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background: radial-gradient(circle at center, #3b0d11 0%, #1a0507 100%);
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        .handwriting {
+            font-family: 'Ma Shan Zheng', 'Noto Sans TC', cursive;
+        }
+
+        /* Hiệu ứng hạt bụi lấp lánh nền */
+        .sparkle-bg {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background-image: 
+                radial-gradient(2px 2px at 20px 30px, #ffd700, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 40px 70px, #ffffff, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 90px 40px, #ffec8b, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 160px 120px, #ffd700, rgba(0,0,0,0));
+            background-repeat: repeat;
+            background-size: 200px 200px;
+            opacity: 0.35;
+            animation: twinkle 4s infinite alternate;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.2; transform: translateY(0px); }
+            100% { opacity: 0.5; transform: translateY(-10px); }
+        }
+
+        /* Container 3D cho hộp quà */
+        .gift-stage {
+            perspective: 1200px;
+        }
+
+        .gift-box-wrapper {
+            position: relative;
+            width: 220px;
+            height: 220px;
+            transform-style: preserve-3d;
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: pointer;
+        }
+
+        @media (min-width: 640px) {
+            .gift-box-wrapper {
+                width: 260px;
+                height: 260px;
+            }
+        }
+
+        .gift-box-wrapper:not(.opened):hover {
+            transform: scale(1.04) translateY(-5px);
+        }
+
+        /* Rung nhẹ mời gọi khi chưa mở */
+        .gift-box-wrapper:not(.opened) {
+            animation: gentleWobble 3s ease-in-out infinite;
+        }
+
+        @keyframes gentleWobble {
+            0%, 100% { transform: rotate(0deg); }
+            15% { transform: rotate(-2deg); }
+            30% { transform: rotate(2deg); }
+            45% { transform: rotate(-1.5deg); }
+            60% { transform: rotate(1.5deg); }
+            75% { transform: rotate(0deg); }
+        }
+
+        /* Thân hộp quà đỏ */
+        .box-body {
+            position: absolute;
+            bottom: 0;
+            left: 10px;
+            right: 10px;
+            height: 165px;
+            background: linear-gradient(135deg, #e11d48 0%, #be123c 55%, #881337 100%);
+            border-radius: 14px;
+            box-shadow: 
+                0 25px 50px -12px rgba(0, 0, 0, 0.75),
+                inset 0 4px 10px rgba(255, 255, 255, 0.25),
+                inset 0 -10px 20px rgba(0, 0, 0, 0.4);
+            z-index: 10;
+            overflow: hidden;
+            transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.6s ease;
+        }
+
+        @media (min-width: 640px) {
+            .box-body {
+                height: 195px;
+            }
+        }
+
+        /* Dải ruy băng dọc trên thân hộp */
+        .ribbon-vertical {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 38px;
+            transform: translateX(-50%);
+            background: linear-gradient(90deg, #d97706 0%, #fbbf24 30%, #fef08a 50%, #fbbf24 70%, #b45309 100%);
+            box-shadow: 0 0 12px rgba(251, 191, 36, 0.4);
+            transition: all 0.6s ease;
+        }
+
+        /* Dải ruy băng ngang trên thân hộp */
+        .ribbon-horizontal {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 50%;
+            height: 36px;
+            transform: translateY(-50%);
+            background: linear-gradient(180deg, #d97706 0%, #fbbf24 30%, #fef08a 50%, #fbbf24 70%, #b45309 100%);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+            transition: all 0.6s ease;
+        }
+
+        /* Nắp hộp quà */
+        .box-lid {
+            position: absolute;
+            top: 30px;
+            left: 0;
+            right: 0;
+            height: 46px;
+            background: linear-gradient(135deg, #f43f5e 0%, #e11d48 50%, #9f1239 100%);
+            border-radius: 12px;
+            box-shadow: 
+                0 10px 20px rgba(0, 0, 0, 0.45),
+                inset 0 3px 6px rgba(255, 255, 255, 0.35);
+            z-index: 20;
+            transition: transform 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.6s ease;
+        }
+
+        @media (min-width: 640px) {
+            .box-lid {
+                top: 35px;
+                height: 52px;
+            }
+        }
+
+        .lid-ribbon {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 40px;
+            transform: translateX(-50%);
+            background: linear-gradient(90deg, #d97706 0%, #fbbf24 30%, #fef08a 50%, #fbbf24 70%, #b45309 100%);
+        }
+
+        /* Chiếc nơ vàng trên đỉnh nắp hộp */
+        .bow-container {
+            position: absolute;
+            top: -14px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 130px;
+            height: 60px;
+            z-index: 30;
+            transition: all 0.7s cubic-bezier(0.34, 1.56, 0.64, 1);
+            filter: drop-shadow(0 6px 8px rgba(0,0,0,0.4));
+        }
+
+        .bow-left, .bow-right {
+            position: absolute;
+            top: 8px;
+            width: 56px;
+            height: 42px;
+            background: linear-gradient(135deg, #fef08a 0%, #fbbf24 45%, #d97706 100%);
+            border-radius: 50% 50% 15% 50%;
+            border: 2px solid #fde047;
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .bow-left {
+            left: 8px;
+            transform: rotate(-18deg);
+        }
+
+        .bow-right {
+            right: 8px;
+            border-radius: 50% 50% 50% 15%;
+            transform: rotate(18deg);
+        }
+
+        .bow-center {
+            position: absolute;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 26px;
+            height: 26px;
+            background: radial-gradient(circle at 30% 30%, #fef9c3, #f59e0b 70%, #b45309 100%);
+            border-radius: 50%;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+            z-index: 5;
+        }
+
+        /* Đuôi nơ */
+        .bow-tail-left, .bow-tail-right {
+            position: absolute;
+            top: 34px;
+            width: 24px;
+            height: 36px;
+            background: linear-gradient(180deg, #f59e0b, #fbbf24);
+            z-index: 1;
+            clip-path: polygon(0 0, 100% 0, 85% 100%, 50% 80%, 15% 100%);
+        }
+
+        .bow-tail-left {
+            left: 34px;
+            transform: rotate(25deg);
+        }
+
+        .bow-tail-right {
+            right: 34px;
+            transform: rotate(-25deg);
+        }
+
+        /* Ánh sáng thần kỳ tỏa ra từ bên trong hộp */
+        .inner-glow {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%) scale(0);
+            width: 240px;
+            height: 240px;
+            background: radial-gradient(circle, rgba(254, 240, 138, 0.95) 0%, rgba(251, 191, 36, 0.4) 45%, rgba(225, 29, 72, 0) 75%);
+            border-radius: 50%;
+            z-index: 15;
+            pointer-events: none;
+            opacity: 0;
+            transition: all 0.8s ease-out;
+        }
+
+        /* Trạng thái 1: Đang tháo nơ */
+        .untying .bow-left {
+            transform: translateX(-35px) rotate(-55deg) scale(0.85);
+            opacity: 0;
+        }
+        .untying .bow-right {
+            transform: translateX(35px) rotate(55deg) scale(0.85);
+            opacity: 0;
+        }
+        .untying .bow-center {
+            transform: translateX(-50%) translateY(-40px) scale(0.5);
+            opacity: 0;
+        }
+        .untying .bow-tail-left, .untying .bow-tail-right {
+            transform: translateY(20px) scaleY(0.2);
+            opacity: 0;
+        }
+        .untying .ribbon-vertical, .untying .ribbon-horizontal, .untying .lid-ribbon {
+            opacity: 0.2;
+        }
+
+        /* Trạng thái 2: Hộp quà đã mở */
+        .opened .bow-container {
+            transform: translateX(-50%) translateY(-140px) scale(0.3);
+            opacity: 0;
+        }
+
+        .opened .box-lid {
+            transform: translateY(-130px) rotate(-18deg) scale(0.9);
+            opacity: 0;
+        }
+
+        .opened .box-body {
+            transform: translateY(70px) scale(0.92);
+            opacity: 0.35;
+        }
+
+        .opened .inner-glow {
+            transform: translateX(-50%) scale(1.6);
+            opacity: 1;
+        }
+
+        /* Khung ảnh Polaroid */
+        .polaroid-card {
+            background: #ffffff;
+            padding: 14px 14px 20px 14px;
+            border-radius: 16px;
+            box-shadow: 
+                0 25px 60px -15px rgba(0, 0, 0, 0.85),
+                0 0 30px rgba(251, 191, 36, 0.35);
+            transform: translateY(60px) scale(0.2) rotate(-8deg);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.85s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .polaroid-card.revealed {
+            transform: translateY(0) scale(1) rotate(0deg);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Nút bấm hiệu ứng nổi bật */
+        .btn-gold {
+            background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+        }
+        .btn-gold:hover {
+            background: linear-gradient(135deg, #fcd34d 0%, #b45309 100%);
+            transform: translateY(-1px);
+        }
+
+        /* Custom scrollbar cho modal */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: rgba(251, 191, 36, 0.4);
+            border-radius: 999px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-between p-4 sm:p-6 text-white relative">
+
+    <!-- Nền hạt sáng lung linh -->
+    <div class="sparkle-bg"></div>
+
+    <!-- Header nhỏ gọn phía trên -->
+    <header class="w-full max-w-2xl flex flex-wrap items-center justify-between gap-2 z-30 pt-1">
+        <a href="?" class="flex items-center gap-2 hover:opacity-90 transition">
+            <span class="text-2xl">🎁</span>
+            <h1 class="text-base sm:text-lg font-bold tracking-wide text-amber-300">神秘禮物盒</h1>
+        </a>
+
+        <!-- Mở trình tạo hộp quà riêng -->
+        <div class="flex items-center gap-2">
+            <button id="openCreatorBtn" type="button" class="cursor-pointer btn-gold text-rose-950 text-xs sm:text-sm font-bold px-4 py-2 rounded-full transition flex items-center gap-1.5 shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>製作專屬禮物盒</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Khu vực trung tâm chính -->
+    <main class="flex-1 w-full max-w-lg flex flex-col items-center justify-center relative my-4 z-20">
+        
+        <!-- Vùng chứa Hộp Quà 3D -->
+        <div id="giftStage" class="gift-stage flex flex-col items-center justify-center relative">
+            
+            <!-- Dòng chữ hướng dẫn phía trên hộp quà -->
+            <div id="instructionBadge" class="mb-6 text-center transition-all duration-500">
+                <span id="instructionText" class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-rose-950/80 border border-amber-400/50 text-amber-200 text-sm sm:text-base font-medium shadow-lg animate-bounce">
+                    <span>✨</span> 點擊蝴蝶結拆開禮物 <span>✨</span>
+                </span>
+            </div>
+
+            <!-- Hộp quà màu đỏ & nơ vàng -->
+            <div id="giftBox" class="gift-box-wrapper" role="button" tabindex="0" aria-label="點擊蝴蝶結拆開禮物">
+                <!-- Luồng sáng bên trong -->
+                <div class="inner-glow"></div>
+
+                <!-- Chiếc nơ vàng óng ánh -->
+                <div class="bow-container" id="bowElement">
+                    <div class="bow-tail-left"></div>
+                    <div class="bow-tail-right"></div>
+                    <div class="bow-left"></div>
+                    <div class="bow-right"></div>
+                    <div class="bow-center"></div>
+                </div>
+
+                <!-- Nắp hộp -->
+                <div class="box-lid">
+                    <div class="lid-ribbon"></div>
+                </div>
+
+                <!-- Thân hộp -->
+                <div class="box-body">
+                    <div class="ribbon-vertical"></div>
+                    <div class="ribbon-horizontal"></div>
+                </div>
+            </div>
+
+            <!-- Ghi chú hướng dẫn dưới hộp quà -->
+            <p id="subHintText" class="mt-8 text-xs sm:text-sm text-rose-200/80 text-center max-w-xs transition-opacity duration-300 leading-relaxed">
+                這是範例禮物盒。點擊右上角的 <b>「製作專屬禮物盒」</b>，上傳你的照片並生成連結傳送給特別的人吧！
+            </p>
+        </div>
+
+        <!-- Khung ảnh Polaroid hiện ra khi mở quà -->
+        <div id="photoRevealContainer" class="fixed inset-0 z-40 flex items-center justify-center p-4 pointer-events-none">
+            <div id="polaroidCard" class="polaroid-card w-full max-w-sm sm:max-w-md text-slate-800 relative">
+                
+                <!-- Ghim trang trí trên đầu khung ảnh -->
+                <div class="absolute -top-3.5 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-gradient-to-br from-rose-500 to-rose-700 border-2 border-amber-300 shadow-md flex items-center justify-center text-white text-xs">
+                    ❤️
+                </div>
+
+                <!-- Vùng hiển thị ảnh -->
+                <div class="relative w-full aspect-[4/4] sm:aspect-[4/3] bg-rose-50 rounded-xl overflow-hidden border border-rose-100 shadow-inner group">
+                    <img id="displayImage" src="" alt="禮物盒中的驚喜照片" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105">
+                </div>
+
+                <!-- Lời chúc ý nghĩa bên dưới ảnh -->
+                <div class="mt-4 text-center px-2">
+                    <p id="captionText" class="handwriting text-2xl sm:text-3xl text-rose-700 font-bold leading-snug px-2 py-1">
+                        聖誕快樂！願你的每一天都充滿溫暖、驚喜與幸福！✨
+                    </p>
+                </div>
+
+                <!-- Các nút điều khiển bên dưới khung ảnh -->
+                <div class="mt-5 flex items-center justify-center gap-3">
+                    <button id="closeGiftBtn" type="button" class="flex-1 py-2.5 px-4 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-800 font-semibold text-sm transition flex items-center justify-center gap-1.5 cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        <span>合上禮物盒</span>
+                    </button>
+
+                    <button id="createOwnFromCardBtn" type="button" class="flex-1 py-2.5 px-4 rounded-xl btn-gold text-rose-950 font-bold text-sm transition flex items-center justify-center gap-1.5 cursor-pointer">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        <span>製作新禮物</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Modal Tạo & Chia Sẻ Hộp Quà -->
+    <div id="creatorModal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+        <div class="bg-rose-950 border border-amber-400/40 rounded-2xl w-full max-w-md p-5 sm:p-6 shadow-2xl text-white relative max-h-[90vh] overflow-y-auto custom-scroll">
+            
+            <!-- Nút đóng modal -->
+            <button id="closeCreatorBtn" type="button" aria-label="關閉" class="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-rose-200 transition cursor-pointer">
+                ✕
+            </button>
+
+            <div class="flex items-center gap-2 mb-4">
+                <span class="text-2xl">🎁</span>
+                <h2 class="text-lg sm:text-xl font-bold text-amber-300">製作並傳送專屬禮物</h2>
+            </div>
+
+            <!-- Bước 1: Form chọn ảnh & nhập lời nhắn -->
+            <div id="creatorFormStep" class="space-y-4">
+                <div>
+                    <label class="block text-xs sm:text-sm font-medium text-amber-200 mb-1.5">1. 選擇要藏進禮物盒的照片：</label>
+                    <label for="modalImageInput" id="dropZoneArea" class="flex flex-col items-center justify-center w-full h-44 border-2 border-dashed border-amber-400/50 hover:border-amber-300 rounded-xl bg-rose-900/40 cursor-pointer transition overflow-hidden relative group">
+                        <div id="uploadPlaceholder" class="flex flex-col items-center justify-center p-4 text-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-9 h-9 text-amber-300 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                            <p class="text-xs sm:text-sm font-medium text-amber-100">點擊選擇照片或將圖片拖曳至此</p>
+                            <p class="text-[11px] text-rose-300/70 mt-1">系統將自動優化畫質以加快開啟速度</p>
+                        </div>
+                        <img id="previewSelectedImg" src="" alt="照片預覽" class="hidden w-full h-full object-cover">
+                        <div id="changeImgOverlay" class="hidden absolute inset-0 bg-black/50 items-center justify-center text-xs font-semibold text-amber-200 opacity-0 group-hover:opacity-100 transition">
+                            點擊更換其他照片
+                        </div>
+                    </label>
+                    <input type="file" id="modalImageInput" accept="image/*" class="hidden">
+                </div>
+
+                <div>
+                    <label for="customMessageInput" class="block text-xs sm:text-sm font-medium text-amber-200 mb-1.5">2. 寫下你的祝福語：</label>
+                    <textarea id="customMessageInput" rows="3" maxlength="220" placeholder="寫下你的祝福... 例如：聖誕快樂！願你每天都開開心心！✨" class="w-full rounded-xl bg-rose-900/50 border border-amber-400/30 focus:border-amber-300 focus:outline-none p-3 text-sm text-white placeholder-rose-300/50 resize-none">聖誕快樂！願你的每一天都充滿溫暖、驚喜與幸福！✨</textarea>
+                </div>
+
+                <button id="saveAndGenerateBtn" type="button" class="w-full py-3 px-4 rounded-xl btn-gold text-rose-950 font-bold text-sm sm:text-base transition flex items-center justify-center gap-2 cursor-pointer">
+                    <span id="saveBtnIcon">✨</span>
+                    <span id="saveBtnText">儲存並生成分享連結</span>
+                </button>
+            </div>
+
+            <!-- Bước 2: Hiển thị link đã tạo để sao chép gửi đi -->
+            <div id="shareResultStep" class="hidden space-y-4">
+                <div class="p-4 rounded-xl bg-emerald-950/60 border border-emerald-400/40 text-center space-y-1">
+                    <div class="text-2xl">🎉</div>
+                    <h3 class="font-bold text-emerald-300 text-base">專屬禮物盒已準備完成！</h3>
+                    <p class="text-xs text-emerald-100/80">將下方連結傳送給對方，當他們打開連結並拆開蝴蝶結時，就會看見你的照片與祝福！</p>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-amber-200 mb-1.5">你的專屬禮物連結：</label>
+                    <div class="flex items-center gap-2">
+                        <input id="shareLinkInput" type="text" readonly class="flex-1 rounded-xl bg-rose-900/60 border border-amber-400/40 px-3 py-2.5 text-xs sm:text-sm text-amber-100 focus:outline-none select-all">
+                        <button id="copyLinkBtn" type="button" class="py-2.5 px-4 rounded-xl btn-gold text-rose-950 font-bold text-xs sm:text-sm whitespace-nowrap transition cursor-pointer">
+                            複製連結
+                        </button>
+                    </div>
+                </div>
+
+                <div class="pt-2 flex items-center gap-2.5">
+                    <button id="previewMyGiftBtn" type="button" class="flex-1 py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-amber-200 font-semibold text-xs sm:text-sm transition cursor-pointer">
+                        立即預覽效果
+                    </button>
+                    <button id="createAnotherBtn" type="button" class="flex-1 py-2.5 px-3 rounded-xl bg-rose-800/70 hover:bg-rose-800 text-white font-semibold text-xs sm:text-sm transition cursor-pointer">
+                        再製作一個
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thông báo toast nhỏ gọn thay cho alert() -->
+    <div id="toastMessage" class="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 bg-amber-400 text-rose-950 font-semibold text-xs sm:text-sm px-4 py-2.5 rounded-full shadow-2xl opacity-0 pointer-events-none transition-all duration-300 translate-y-4 text-center max-w-[90vw]">
+        提示訊息
+    </div>
+
+    <!-- Footer -->
+    <footer class="w-full text-center text-xs text-rose-300/50 pb-2 z-20">
+        傳遞最真摯的心意與節日驚喜 ❤️
+    </footer>
+
+    <!-- Firebase SDK & Logic ứng dụng -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Cấu hình Firebase từ biến môi trường hệ thống
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
+
+        let db = null;
+        let auth = null;
+        let currentUser = null;
+
+        // Khởi tạo Firebase & Đăng nhập xác thực trước mọi thao tác dữ liệu
+        async function initFirebase() {
+            if (!firebaseConfig) return null;
+            try {
+                const app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    const cred = await signInWithCustomToken(auth, __initial_auth_token);
+                    currentUser = cred.user;
+                } else {
+                    const cred = await signInAnonymously(auth);
+                    currentUser = cred.user;
+                }
+                return currentUser;
+            } catch (err) {
+                console.error("雲端儲存初始化失敗:", err);
+                return null;
+            }
+        }
+
+        // Ảnh mẫu mặc định bằng SVG Data URI sắc nét
+        const defaultSampleImage = "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 450" width="600" height="450">
+                <defs>
+                    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#ffe4e6"/>
+                        <stop offset="50%" stop-color="#fecdd3"/>
+                        <stop offset="100%" stop-color="#fde68a"/>
+                    </linearGradient>
+                    <linearGradient id="heartGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#f43f5e"/>
+                        <stop offset="100%" stop-color="#be123c"/>
+                    </linearGradient>
+                </defs>
+                <rect width="600" height="450" fill="url(#bgGrad)"/>
+                <circle cx="90" cy="80" r="45" fill="#fff1f2" opacity="0.7"/>
+                <circle cx="510" cy="360" r="65" fill="#fef3c7" opacity="0.7"/>
+                <circle cx="500" cy="90" r="25" fill="#fda4af" opacity="0.5"/>
+                <circle cx="110" cy="350" r="30" fill="#fcd34d" opacity="0.5"/>
+                <g transform="translate(300, 195)">
+                    <path d="M0 65 C-85 5, -110 -65, -50 -95 C-15 -112, 0 -80, 0 -65 C0 -80, 15 -112, 50 -95 C110 -65, 85 5, 0 65 Z" fill="url(#heartGrad)"/>
+                    <circle cx="-22" cy="-35" r="6" fill="#ffffff"/>
+                    <circle cx="22" cy="-35" r="6" fill="#ffffff"/>
+                    <path d="M-16 -15 Q0 4 16 -15" stroke="#ffffff" stroke-width="5" stroke-linecap="round" fill="none"/>
+                    <circle cx="-34" cy="-22" r="7" fill="#fda4af" opacity="0.8"/>
+                    <circle cx="34" cy="-22" r="7" fill="#fda4af" opacity="0.8"/>
+                </g>
+                <text x="165" y="135" font-size="32">✨</text>
+                <text x="405" y="145" font-size="32">🎄</text>
+                <text x="175" y="300" font-size="28">🌟</text>
+                <text x="395" y="295" font-size="28">💖</text>
+                <text x="300" y="345" font-family="'Noto Sans TC', sans-serif" font-size="22" font-weight="bold" fill="#881337" text-anchor="middle">
+                    這是一個溫馨的範例禮物盒！
+                </text>
+                <text x="300" y="378" font-family="'Noto Sans TC', sans-serif" font-size="16" fill="#9f1239" text-anchor="middle">
+                    點擊「製作專屬禮物盒」上傳你的真實照片吧
+                </text>
+            </svg>
+        `);
+
+        // Các phần tử DOM
+        const giftBox = document.getElementById('giftBox');
+        const instructionBadge = document.getElementById('instructionBadge');
+        const instructionText = document.getElementById('instructionText');
+        const subHintText = document.getElementById('subHintText');
+        const polaroidCard = document.getElementById('polaroidCard');
+        const displayImage = document.getElementById('displayImage');
+        const captionText = document.getElementById('captionText');
+        const closeGiftBtn = document.getElementById('closeGiftBtn');
+        const toastMessage = document.getElementById('toastMessage');
+
+        // Phần tử Modal tạo quà
+        const creatorModal = document.getElementById('creatorModal');
+        const openCreatorBtn = document.getElementById('openCreatorBtn');
+        const createOwnFromCardBtn = document.getElementById('createOwnFromCardBtn');
+        const closeCreatorBtn = document.getElementById('closeCreatorBtn');
+        const modalImageInput = document.getElementById('modalImageInput');
+        const dropZoneArea = document.getElementById('dropZoneArea');
+        const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+        const previewSelectedImg = document.getElementById('previewSelectedImg');
+        const changeImgOverlay = document.getElementById('changeImgOverlay');
+        const customMessageInput = document.getElementById('customMessageInput');
+        const saveAndGenerateBtn = document.getElementById('saveAndGenerateBtn');
+        const saveBtnIcon = document.getElementById('saveBtnIcon');
+        const saveBtnText = document.getElementById('saveBtnText');
+        const creatorFormStep = document.getElementById('creatorFormStep');
+        const shareResultStep = document.getElementById('shareResultStep');
+        const shareLinkInput = document.getElementById('shareLinkInput');
+        const copyLinkBtn = document.getElementById('copyLinkBtn');
+        const previewMyGiftBtn = document.getElementById('previewMyGiftBtn');
+        const createAnotherBtn = document.getElementById('createAnotherBtn');
+
+        let isOpened = false;
+        let isAnimating = false;
+        let compressedBase64Image = null;
+        let activeGiftData = {
+            image: defaultSampleImage,
+            message: "聖誕快樂！願你的每一天都充滿溫暖、驚喜與幸福！✨"
+        };
+
+        // Cập nhật giao diện hộp quà từ dữ liệu hiện tại
+        function applyGiftData(data, isSharedGift = false) {
+            activeGiftData = data;
+            displayImage.src = data.image;
+            captionText.textContent = data.message;
+
+            if (isSharedGift) {
+                instructionText.innerHTML = '<span>🎁</span> 有人送你一份神秘禮物！點擊蝴蝶結拆開 <span>✨</span>';
+                subHintText.innerHTML = '輕觸禮物盒上的金色蝴蝶結，揭開裡面的驚喜吧！';
+            }
+        }
+
+        // Hiển thị thông báo Toast
+        function showToast(text) {
+            toastMessage.textContent = text;
+            toastMessage.classList.remove('opacity-0', 'translate-y-4');
+            toastMessage.classList.add('opacity-100', 'translate-y-0');
+            setTimeout(() => {
+                toastMessage.classList.add('opacity-0', 'translate-y-4');
+                toastMessage.classList.remove('opacity-100', 'translate-y-0');
+            }, 3000);
+        }
+
+        // Tạo âm thanh mở quà vui nhộn bằng Web Audio API
+        function playOpenSound() {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const ctx = new AudioCtx();
+                if (ctx.state === 'suspended') {
+                    ctx.resume();
+                }
+
+                const notes = [523.25, 659.25, 783.99, 987.77, 1046.50]; // C5, E5, G5, B5, C6
+                const now = ctx.currentTime;
+
+                notes.forEach((freq, idx) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+
+                    gain.gain.setValueAtTime(0.001, now + idx * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.18, now + idx * 0.08 + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.08 + 0.55);
+
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+
+                    osc.start(now + idx * 0.08);
+                    osc.stop(now + idx * 0.08 + 0.6);
+                });
+            } catch (e) {
+                // Bỏ qua nếu trình duyệt chặn phát âm thanh
+            }
+        }
+
+        // Trình phát nhạc nền Giáng sinh tự động (Jingle Bells & We Wish You a Merry Christmas)
+        const christmasMusicPlayer = (() => {
+            let audioCtx = null;
+            let isPlaying = false;
+            let timerId = null;
+            let noteIndex = 0;
+
+            const N = {
+                G4: 392.00, A4: 440.00, B4: 493.88,
+                C5: 523.25, D5: 587.33, E5: 659.25, F5: 698.46, G5: 783.99, A5: 880.00,
+                REST: 0
+            };
+
+            const melody = [
+                // Jingle Bells
+                [N.E5, 1], [N.E5, 1], [N.E5, 2],
+                [N.E5, 1], [N.E5, 1], [N.E5, 2],
+                [N.E5, 1], [N.G5, 1], [N.C5, 1.5], [N.D5, 0.5], [N.E5, 3], [N.REST, 1],
+
+                [N.F5, 1], [N.F5, 1], [N.F5, 1.5], [N.F5, 0.5],
+                [N.F5, 1], [N.E5, 1], [N.E5, 1], [N.E5, 0.5], [N.E5, 0.5],
+                [N.E5, 1], [N.D5, 1], [N.D5, 1], [N.E5, 1], [N.D5, 2], [N.G5, 2],
+
+                [N.E5, 1], [N.E5, 1], [N.E5, 2],
+                [N.E5, 1], [N.E5, 1], [N.E5, 2],
+                [N.E5, 1], [N.G5, 1], [N.C5, 1.5], [N.D5, 0.5], [N.E5, 3], [N.REST, 1],
+
+                [N.F5, 1], [N.F5, 1], [N.F5, 1.5], [N.F5, 0.5],
+                [N.F5, 1], [N.E5, 1], [N.E5, 1], [N.E5, 0.5], [N.E5, 0.5],
+                [N.G5, 1], [N.G5, 1], [N.F5, 1], [N.D5, 1], [N.C5, 3], [N.REST, 1],
+
+                // We Wish You a Merry Christmas
+                [N.G4, 1],
+                [N.C5, 1], [N.C5, 0.5], [N.D5, 0.5], [N.C5, 0.5], [N.B4, 0.5],
+                [N.A4, 1], [N.A4, 1], [N.A4, 1],
+                [N.D5, 1], [N.D5, 0.5], [N.E5, 0.5], [N.D5, 0.5], [N.C5, 0.5],
+                [N.B4, 1], [N.G4, 1], [N.G4, 1],
+                [N.E5, 1], [N.E5, 0.5], [N.F5, 0.5], [N.E5, 0.5], [N.D5, 0.5],
+                [N.C5, 1], [N.A4, 1], [N.G4, 0.5], [N.G4, 0.5],
+                [N.A4, 1], [N.D5, 1], [N.B4, 1],
+                [N.C5, 2.5], [N.REST, 1.5]
+            ];
+
+            const beatSeconds = 0.34;
+
+            function playMusicBoxBell(freq, durationSec) {
+                if (!audioCtx || audioCtx.state !== 'running' || freq <= 0) return;
+                const now = audioCtx.currentTime;
+
+                const mainOsc = audioCtx.createOscillator();
+                const shimmerOsc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                const shimmerGain = audioCtx.createGain();
+
+                mainOsc.type = 'sine';
+                mainOsc.frequency.setValueAtTime(freq, now);
+
+                shimmerOsc.type = 'triangle';
+                shimmerOsc.frequency.setValueAtTime(freq * 2, now);
+
+                const releaseTime = Math.max(durationSec * 1.4, 0.45);
+
+                gainNode.gain.setValueAtTime(0.0001, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.11, now + 0.02);
+                gainNode.gain.exponentialRampToValueAtTime(0.0001, now + releaseTime);
+
+                shimmerGain.gain.setValueAtTime(0.0001, now);
+                shimmerGain.gain.exponentialRampToValueAtTime(0.025, now + 0.015);
+                shimmerGain.gain.exponentialRampToValueAtTime(0.0001, now + releaseTime * 0.6);
+
+                mainOsc.connect(gainNode);
+                shimmerOsc.connect(shimmerGain);
+                shimmerGain.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                mainOsc.start(now);
+                shimmerOsc.start(now);
+                mainOsc.stop(now + releaseTime + 0.05);
+                shimmerOsc.stop(now + releaseTime + 0.05);
+            }
+
+            function scheduleNextNote() {
+                if (!isPlaying) return;
+                const [freq, beats] = melody[noteIndex];
+                const durationSec = beats * beatSeconds;
+
+                if (audioCtx && audioCtx.state === 'running') {
+                    playMusicBoxBell(freq, durationSec);
+                    noteIndex = (noteIndex + 1) % melody.length;
+                }
+                timerId = setTimeout(scheduleNextNote, durationSec * 1000);
+            }
+
+            async function start() {
+                try {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (!AudioCtx) return;
+                    if (!audioCtx) {
+                        audioCtx = new AudioCtx();
+                    }
+                    if (audioCtx.state === 'suspended') {
+                        await audioCtx.resume();
+                    }
+                    if (!isPlaying) {
+                        isPlaying = true;
+                        scheduleNextNote();
+                    }
+                } catch (e) {
+                    // Trình duyệt yêu cầu tương tác người dùng trước khi phát
+                }
+            }
+
+            return { start };
+        })();
+
+        // Hiệu ứng bắn pháo giấy
+        function fireConfetti() {
+            if (typeof confetti === 'function') {
+                confetti({
+                    particleCount: 90,
+                    spread: 75,
+                    origin: { y: 0.55 },
+                    colors: ['#fbbf24', '#f43f5e', '#ffffff', '#fde047', '#fb7185']
+                });
+
+                setTimeout(() => {
+                    confetti({
+                        particleCount: 45,
+                        angle: 60,
+                        spread: 55,
+                        origin: { x: 0.1, y: 0.6 },
+                        colors: ['#fbbf24', '#f43f5e', '#ffffff']
+                    });
+                    confetti({
+                        particleCount: 45,
+                        angle: 120,
+                        spread: 55,
+                        origin: { x: 0.9, y: 0.6 },
+                        colors: ['#fbbf24', '#f43f5e', '#ffffff']
+                    });
+                }, 250);
+            }
+        }
+
+        // Mở hộp quà
+        function openGiftBox() {
+            christmasMusicPlayer.start();
+            if (isOpened || isAnimating) return;
+            isAnimating = true;
+
+            giftBox.classList.add('untying');
+            instructionBadge.style.opacity = '0';
+            subHintText.style.opacity = '0';
+
+            setTimeout(() => {
+                giftBox.classList.add('opened');
+                playOpenSound();
+                fireConfetti();
+            }, 450);
+
+            setTimeout(() => {
+                polaroidCard.classList.add('revealed');
+                isOpened = true;
+                isAnimating = false;
+            }, 750);
+        }
+
+        // Đóng hộp quà
+        function closeGiftBox() {
+            if (!isOpened || isAnimating) return;
+            isAnimating = true;
+
+            polaroidCard.classList.remove('revealed');
+
+            setTimeout(() => {
+                giftBox.classList.remove('opened');
+            }, 300);
+
+            setTimeout(() => {
+                giftBox.classList.remove('untying');
+                instructionBadge.style.opacity = '1';
+                subHintText.style.opacity = '1';
+                isOpened = false;
+                isAnimating = false;
+            }, 750);
+        }
+
+        // Hàm tự động nén ảnh xuống kích thước tối ưu (< 600KB) để lưu trữ mượt mà trên Firestore
+        function compressImage(file, maxWidth = 900, quality = 0.78) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        let width = img.width;
+                        let height = img.height;
+
+                        if (width > maxWidth || height > maxWidth) {
+                            if (width > height) {
+                                height = Math.round((height * maxWidth) / width);
+                                width = maxWidth;
+                            } else {
+                                width = Math.round((width * maxWidth) / height);
+                                height = maxWidth;
+                            }
+                        }
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        let compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+                        if (compressedDataUrl.length > 750000) {
+                            compressedDataUrl = canvas.toDataURL('image/jpeg', 0.55);
+                        }
+                        resolve(compressedDataUrl);
+                    };
+                    img.onerror = () => reject(new Error("無法讀取此圖片格式。"));
+                    img.src = e.target.result;
+                };
+                reader.onerror = () => reject(new Error("讀取圖片檔案發生錯誤。"));
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Xử lý chọn file ảnh trong Modal
+        async function processSelectedFile(file) {
+            if (!file || !file.type.startsWith('image/')) {
+                showToast('請選擇有效的圖片檔案！');
+                return;
+            }
+            try {
+                const dataUrl = await compressImage(file);
+                compressedBase64Image = dataUrl;
+                previewSelectedImg.src = dataUrl;
+                previewSelectedImg.classList.remove('hidden');
+                uploadPlaceholder.classList.add('hidden');
+                changeImgOverlay.classList.remove('hidden');
+                changeImgOverlay.classList.add('flex');
+            } catch (err) {
+                showToast('無法處理此圖片，請嘗試選擇其他照片。');
+            }
+        }
+
+        // Sinh mã ID ngẫu nhiên ngắn gọn cho hộp quà
+        function generateGiftId() {
+            const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let result = '';
+            for (let i = 0; i < 10; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        // Lưu dữ liệu lên Firestore và tạo link chia sẻ
+        async function saveGiftAndCreateLink() {
+            if (!compressedBase64Image) {
+                showToast('生成連結前，請先選擇一張照片！');
+                return;
+            }
+
+            const message = customMessageInput.value.trim() || "聖誕快樂！願你的每一天都充滿溫暖與驚喜！✨";
+
+            saveAndGenerateBtn.disabled = true;
+            saveBtnIcon.textContent = '⏳';
+            saveBtnText.textContent = '正在儲存並生成連結...';
+
+            try {
+                if (!currentUser) {
+                    await initFirebase();
+                }
+                if (!db || !currentUser) {
+                    throw new Error("無法連線至雲端伺服器。");
+                }
+
+                const giftId = generateGiftId();
+                const giftDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'gifts', giftId);
+
+                await setDoc(giftDocRef, {
+                    image: compressedBase64Image,
+                    message: message,
+                    createdAt: Date.now(),
+                    creatorId: currentUser.uid
+                });
+
+                const shareUrl = new URL(window.location.href);
+                shareUrl.searchParams.set('giftId', giftId);
+                const finalLink = shareUrl.toString();
+
+                window.history.replaceState({}, '', finalLink);
+
+                applyGiftData({ image: compressedBase64Image, message: message }, true);
+
+                shareLinkInput.value = finalLink;
+                creatorFormStep.classList.add('hidden');
+                shareResultStep.classList.remove('hidden');
+                showToast('🎉 專屬禮物連結已成功生成！');
+            } catch (error) {
+                console.error("儲存禮物盒時發生錯誤:", error);
+                showToast('儲存失敗，請嘗試選擇較小的圖片或稍後再試！');
+            } finally {
+                saveAndGenerateBtn.disabled = false;
+                saveBtnIcon.textContent = '✨';
+                saveBtnText.textContent = '儲存並生成分享連結';
+            }
+        }
+
+        // Tải dữ liệu hộp quà từ Firestore khi mở link có chứa ?giftId=...
+        async function loadGiftFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const giftId = urlParams.get('giftId');
+
+            applyGiftData(activeGiftData, false);
+            christmasMusicPlayer.start();
+
+            await initFirebase();
+
+            if (!giftId || !db || !currentUser) {
+                return;
+            }
+
+            try {
+                instructionText.innerHTML = '<span>⏳</span> 正在為你準備神秘禮物...';
+                const giftDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'gifts', giftId);
+                const docSnap = await getDoc(giftDocRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    applyGiftData({
+                        image: data.image || defaultSampleImage,
+                        message: data.message || "聖誕快樂！願你每天都開開心心！✨"
+                    }, true);
+                } else {
+                    instructionText.innerHTML = '<span>✨</span> 點擊蝴蝶結拆開禮物 <span>✨</span>';
+                    showToast('找不到此禮物盒，或連結已失效。');
+                }
+            } catch (err) {
+                console.error("載入禮物盒失敗:", err);
+                instructionText.innerHTML = '<span>✨</span> 點擊蝴蝶結拆開禮物 <span>✨</span>';
+            }
+        }
+
+        // Mở / Đóng Modal
+        function openCreatorModal() {
+            creatorModal.classList.remove('hidden');
+            creatorModal.classList.add('flex');
+        }
+
+        function closeCreatorModal() {
+            creatorModal.classList.add('hidden');
+            creatorModal.classList.remove('flex');
+        }
+
+        // Sao chép link vào clipboard bằng document.execCommand('copy') an toàn cho iframe
+        function copyShareLink() {
+            shareLinkInput.focus();
+            shareLinkInput.select();
+            shareLinkInput.setSelectionRange(0, 99999);
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    copyLinkBtn.textContent = '已複製 ✓';
+                    showToast('📋 已複製連結！快傳送給你的好友吧。');
+                    setTimeout(() => {
+                        copyLinkBtn.textContent = '複製連結';
+                    }, 2500);
+                } else {
+                    showToast('請長按連結欄位手動複製喔！');
+                }
+            } catch (err) {
+                showToast('請長按連結欄位手動複製喔！');
+            }
+        }
+
+        // Tự động kích hoạt nhạc Giáng sinh ngay khi người dùng chạm lần đầu vào trang (nếu trình duyệt chặn autoplay ban đầu)
+        function unlockAudioOnFirstInteraction() {
+            christmasMusicPlayer.start();
+            document.removeEventListener('pointerdown', unlockAudioOnFirstInteraction);
+            document.removeEventListener('keydown', unlockAudioOnFirstInteraction);
+        }
+        document.addEventListener('pointerdown', unlockAudioOnFirstInteraction, { passive: true });
+        document.addEventListener('keydown', unlockAudioOnFirstInteraction, { passive: true });
+
+        // Gắn các sự kiện tương tác
+        giftBox.addEventListener('click', openGiftBox);
+        giftBox.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                openGiftBox();
+            }
+        });
+
+        closeGiftBtn.addEventListener('click', closeGiftBox);
+        openCreatorBtn.addEventListener('click', openCreatorModal);
+        createOwnFromCardBtn.addEventListener('click', () => {
+            closeGiftBox();
+            setTimeout(openCreatorModal, 400);
+        });
+        closeCreatorBtn.addEventListener('click', closeCreatorModal);
+
+        creatorModal.addEventListener('click', (e) => {
+            if (e.target === creatorModal) {
+                closeCreatorModal();
+            }
+        });
+
+        modalImageInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files[0]) {
+                processSelectedFile(e.target.files[0]);
+                e.target.value = '';
+            }
+        });
+
+        dropZoneArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZoneArea.classList.add('border-amber-300', 'bg-rose-900/70');
+        });
+        dropZoneArea.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZoneArea.classList.remove('border-amber-300', 'bg-rose-900/70');
+        });
+        dropZoneArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZoneArea.classList.remove('border-amber-300', 'bg-rose-900/70');
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                processSelectedFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        saveAndGenerateBtn.addEventListener('click', saveGiftAndCreateLink);
+        copyLinkBtn.addEventListener('click', copyShareLink);
+
+        previewMyGiftBtn.addEventListener('click', () => {
+            closeCreatorModal();
+            if (isOpened) {
+                closeGiftBox();
+                setTimeout(openGiftBox, 800);
+            }
+        });
+
+        createAnotherBtn.addEventListener('click', () => {
+            compressedBase64Image = null;
+            previewSelectedImg.src = '';
+            previewSelectedImg.classList.add('hidden');
+            uploadPlaceholder.classList.remove('hidden');
+            changeImgOverlay.classList.add('hidden');
+            changeImgOverlay.classList.remove('flex');
+            shareResultStep.classList.add('hidden');
+            creatorFormStep.classList.remove('hidden');
+        });
+
+        // Khởi chạy ứng dụng khi tải trang
+        window.addEventListener('DOMContentLoaded', loadGiftFromUrl);
+    </script>
+</body>
+</html>
